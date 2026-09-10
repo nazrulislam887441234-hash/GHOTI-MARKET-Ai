@@ -49,8 +49,8 @@ export default {
     User: ${userQuery}
     `;
 
-    // NEW AUTH KEY FIX - Use x-goog-api-key header
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
+    // UPDATED MODEL: gemini-3.6-flash
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
