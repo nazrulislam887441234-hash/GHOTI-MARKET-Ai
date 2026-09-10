@@ -1,182 +1,141 @@
 export default {
   async fetch(request, env) {
+    // CORS
     if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key"
-        }
-      });
+      return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key" }});
     }
 
     const GEMINI_KEY = env.GEMINI_API_KEY;
     const PROJECT_ID = "ghotimarket";
-    const cache = caches.default;
+    const CACHE_TTL = 600;
 
-    // 1. PRODUCTS FETCH WITH CACHE (10 min) & PAGINATION SUPPORT
+    // 1. PRODUCTS FETCH - LINK FIX:? দিয়ে
     let productsText = "";
     try {
-      const prodCacheKey = new Request("https://cache.ghotimarket.com/products");
-      let cached = await cache.match(prodCacheKey);
-      let allDocuments = [];
-      
-      if (cached) {
-        const cachedData = await cached.json();
-        allDocuments = cachedData.documents || [];
+      const cacheKey = `https://cache.ghotimarket.com/products`;
+      const cache = caches.default;
+      let fbData;
+      let cachedRes = await cache.match(cacheKey);
+      if (cachedRes) {
+        fbData = await cachedRes.json();
       } else {
-        let pageToken = "";
-        do {
-          let url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/products?pageSize=200`;
-          if (pageToken) {
-            url += `&pageToken=${pageToken}`;
-          }
-          const fbRes = await fetch(url);
-          const fbData = await fbRes.json();
-          if (fbData.documents) {
-            allDocuments = allDocuments.concat(fbData.documents);
-          }
-          pageToken = fbData.nextPageToken || "";
-        } while (pageToken);
-
-        await cache.put(
-          prodCacheKey,
-          new Response(JSON.stringify({ documents: allDocuments }), {
-            headers: { "Cache-Control": "max-age=600" }
-          })
-        );
+        const fbRes = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/products?pageSize=200`);
+        fbData = await fbRes.json();
+        const toCache = new Response(JSON.stringify(fbData), { headers: { "Cache-Control": `max-age=${CACHE_TTL}` } });
+        await cache.put(cacheKey, toCache);
       }
-
-      if (allDocuments.length > 0) {
-        productsText = allDocuments.map(doc => {
+      if (fbData.documents) {
+        productsText = fbData.documents.map(doc => {
           const f = doc.fields;
           const id = doc.name.split('/').pop();
           const name = f.name?.stringValue || f.title?.stringValue || 'No Name';
           const priceRaw = f.price?.stringValue || f.price?.integerValue || f.price?.doubleValue || '0';
           const price = parseInt(priceRaw) || 0;
-          const oldPriceRaw = f.oldPrice?.stringValue || f.oldPrice?.integerValue || f.oldPrice?.doubleValue || '';
-          const oldPrice = oldPriceRaw ? ` | OldPrice:${oldPriceRaw}` : '';
           const slug = f.slug?.stringValue || f.productSlug?.stringValue || id;
-          const description = f.description?.stringValue ? ` | Desc:${f.description.stringValue.slice(0, 150)}` : '';
-          const active = f.active?.booleanValue !== false; // default true if missing
-          
-          let keywords = f.keywords?.arrayValue?.values
-            ? f.keywords.arrayValue.values.map(v => v.stringValue).join(', ')
-            : (f.keywords?.stringValue || f.tags?.stringValue || '');
-            
-          return `Active:${active} | Name:${name} | Price:${price}${oldPrice} | SLUG:${slug} | Keywords:${keywords}${description} | LINK:https://ghotimarket.com/product?${slug}`;
+          let keywords = '';
+          if (f.keywords?.arrayValue?.values) {
+            keywords = f.keywords.arrayValue.values.map(v => v.stringValue).join(', ');
+          } else {
+            keywords = f.keywords?.stringValue || f.tags?.stringValue || '';
+          }
+          // FIX HERE:? দিয়ে লিংক
+          return `Name:${name} | Price:${price} | SLUG:${slug} | Keywords:${keywords} | LINK:https://ghotimarket.com/product?${slug}`;
         }).join("\n");
       }
-    } catch (e) {
-      productsText = "Product load failed";
-    }
+    } catch (e) { productsText = "Product load failed"; }
 
-    // 2. LIVE POLICY FETCH WITH CACHE (1 hour) - PARALLEL FETCH
-    const policyUrls = [
-      "https://ghotimarket.com/privacy-policy",
-      "https://ghotimarket.com/termsandcondition",
-      "https://ghotimarket.com/",
-      "https://ghotimarket.com/return%26refund-policy",
-      "https://ghotimarket.com/delivery-policy.html",
-      "https://seller.ghotimarket.com/signup",
-      "https://reseller.ghotimarket.com/signup",
-      "https://reseller.ghotimarket.com/privacy-policy",
-      "https://ghotimarket.com/contact",
-      "https://reseller.ghotimarket.com/terms"
-    ];
-
+    // 2. LIVE FETCH - আগের সব লিংক + about.ghotimarket.com
+    const cache = caches.default;
     let policyKnowledge = "";
+    let aboutKnowledge = "";
+
     try {
-      const policyCacheKey = new Request("https://cache.ghotimarket.com/policies");
-      let cachedPolicy = await cache.match(policyCacheKey);
-      if (cachedPolicy) {
-        policyKnowledge = await cachedPolicy.text();
+      const policyKey = new Request("https://cache.ghotimarket.com/policy-live-v6");
+      let pCached = await cache.match(policyKey);
+      if (pCached) {
+        policyKnowledge = await pCached.text();
       } else {
-        const fetches = policyUrls.map(async (url) => {
-          try {
-            const res = await fetch(url, { headers: { "User-Agent": "GhotiBot/1.0" } });
-            let html = await res.text();
-            let text = html
-              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-              .replace(/<[^>]+>/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim()
-              .slice(0, 4000);
-            return `\n--- LIVE CONTENT FROM ${url} ---\n${text}\n`;
-          } catch {
-            return `\n--- ${url} - failed to load ---\n`;
-          }
+        const urls = [
+          "https://ghotimarket.com/",
+          "https://ghotimarket.com/privacy-policy",
+          "https://ghotimarket.com/termsandcondition",
+          "https://ghotimarket.com/delivery-policy.html",
+          "https://ghotimarket.com/return%26refund-policy",
+          "https://ghotimarket.com/contact",
+          "https://seller.ghotimarket.com/signup",
+          "https://reseller.ghotimarket.com/signup",
+          "https://reseller.ghotimarket.com/terms",
+          "https://reseller.ghotimarket.com/privacy-policy"
+        ];
+        const fetches = urls.map(async u => {
+          try { const r = await fetch(u); let h = await r.text(); h = h.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,4000); return `--- LIVE FROM ${u} ---\n${h}\n`; } catch { return ""; }
         });
-        const results = await Promise.all(fetches);
-        policyKnowledge = results.join("\n");
-        await cache.put(
-          policyCacheKey,
-          new Response(policyKnowledge, { headers: { "Cache-Control": "max-age=3600" } })
-        );
+        policyKnowledge = (await Promise.all(fetches)).join("\n");
+        await cache.put(policyKey, new Response(policyKnowledge, { headers: { "Cache-Control": "max-age=3600" } }));
       }
-    } catch (e) {
-      policyKnowledge = "Policy pages load failed";
-    }
+
+      const aboutKey = new Request("https://cache.ghotimarket.com/about-live-v6");
+      let aCached = await cache.match(aboutKey);
+      if (aCached) {
+        aboutKnowledge = await aCached.text();
+      } else {
+        try {
+          const r = await fetch("https://about.ghotimarket.com");
+          let h = await r.text();
+          aboutKnowledge = h.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,8000);
+          await cache.put(aboutKey, new Response(aboutKnowledge, { headers: { "Cache-Control": "max-age=3600" } }));
+        } catch { aboutKnowledge = "Ghoti Market is Bangladesh trending marketplace from Sylhet. Details at https://about.ghotimarket.com"; }
+      }
+    } catch(e){ policyKnowledge = "Policy load failed"; }
 
     let userQuery = "";
-    if (request.method === "POST") {
-      try {
-        const b = await request.json();
-        userQuery = b.message || b.q || "";
-      } catch {}
-    } else {
-      userQuery = new URL(request.url).searchParams.get("q") || "";
-    }
+    if (request.method === "POST") { try { const b = await request.json(); userQuery = b.message || b.q || ""; } catch {} }
+    else { userQuery = new URL(request.url).searchParams.get("q") || ""; }
 
     if (!userQuery) {
-      return new Response(
-        JSON.stringify({ status: "Ghoti AI Live with Strict Read-Only & New URL Format ✅" }),
-        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
+      return new Response(JSON.stringify({ status: "Ghoti AI Live ✅", version: "api + about Live, Link Format?" }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
 
-    const systemPrompt = `
-You are Ghoti AI, Official Shopping Assistant of ghotimarket.com. Created by Ghoti Market Team, Sylhet, Bangladesh.
+const systemPrompt = `
+You are Ghoti AI, Official Assistant of ghotimarket.com. Created by Ghoti Market Team, Sylhet, Bangladesh. You run at api.ghotimarket.com
 
-STRICT READ-ONLY SYSTEM RULES:
-1. YOU ARE STRICTLY READ-ONLY. You CANNOT create, edit, delete products, modify prices, create/cancel/modify orders, change order status, create seller/reseller/user accounts, modify user data, write/update/delete in Firestore, initiate payments/refunds, send WhatsApp/SMS/emails, or change website content.
-2. If the user asks you to perform any write/mutation/action (e.g., "delete my product", "change price", "create order", "update database", "open account"), you MUST strictly reply: "দুঃখিত বস, আমি শুধু তথ্য দিতে পারি। কোনো পরিবর্তন বা action নিতে পারি না।"
-3. PRODUCT LINK FORMAT: You MUST ONLY use the URL format: https://ghotimarket.com/product?SLUG. NEVER use slashes like /product/SLUG.
-4. NO HALLUCINATION: Do not invent products, prices, discounts, delivery times, policies, or contact details. If information is missing from the database or live content, state clearly that it is not available.
-5. IDENTITY: If user asks "tumi ke / who are you" -> Answer: "আমি Ghoti AI। আমাকে Ghoti Market Team তৈরি করেছে। আমি ghotimarket.com-এর Official Shopping Assistant।"
-6. POLICY & HOMEPAGE: Summarize strictly from the REAL LIVE WEBSITE CONTENT below and always provide the exact source URL. For delivery, use https://ghotimarket.com/delivery-policy.html. For return/refund, use https://ghotimarket.com/return%26refund-policy.
-7. LANGUAGE & TONE: Match user's language. Use "বস" in Bangla queries. Be helpful, concise, and friendly without excessive emojis.
-
-PRODUCT DATABASE:
+PRODUCT DB (LINK FORMAT MUST BE https://ghotimarket.com/product?SLUG with? not /):
 ${productsText}
 
-REAL LIVE WEBSITE CONTENT:
+OLD WEBSITE KNOWLEDGE (LIVE FROM ALL OLD LINKS):
 ${policyKnowledge}
+
+ABOUT GHOTI MARKET KNOWLEDGE (LIVE FROM https://about.ghotimarket.com):
+${aboutKnowledge}
+
+INSTRUCTIONS:
+1. IDENTITY: If asked who are you -> BN: "আমি Ghoti AI 😊 Ghoti Market Team বানিয়েছে।" EN: "I am Ghoti AI, created by Ghoti Market Team."
+2. PRODUCT SEARCH: Fuzzy match Name+Keywords. ALWAYS give LINK as https://ghotimarket.com/product?SLUG - MUST USE? NOT /. Example: https://ghotimarket.com/product?i-phone - NEVER use /product/i-phone
+3. POLICY: Answer from OLD WEBSITE KNOWLEDGE and ALWAYS give relevant link.
+4. ABOUT GHOTI: If query contains "Ghoti Market ki / What is Ghoti Market / About Ghoti / ঘটি মার্কেট কি" -> Use ONLY ABOUT KNOWLEDGE from https://about.ghotimarket.com and give link https://about.ghotimarket.com + https://ghotimarket.com
+5. Language: User's language, use "বস" in Bangla.
 
 User Query: ${userQuery}
 `;
 
     try {
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
-          body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
-        }
-      );
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+      });
       const geminiData = await geminiRes.json();
       const aiReply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "দুঃখিত বস, একটু সমস্যা হচ্ছে।";
-      return new Response(
-        JSON.stringify({ reply: aiReply, query: userQuery, live: true }),
-        { headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" } }
-      );
+
+      return new Response(JSON.stringify({ reply: aiReply, query: userQuery, status: "success" }), {
+        headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+      });
     } catch (err) {
-      return new Response(
-        JSON.stringify({ reply: "Server busy boss, try again!", error: "Internal processing error" }),
-        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
+      return new Response(JSON.stringify({ reply: "Server busy, try again boss!", error: err.message }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
   }
-};
+}
