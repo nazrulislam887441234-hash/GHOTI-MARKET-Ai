@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary SEO -->
+    <title>GHOTI MARKET AI | GHOTI MARKET-এর AI Assistant</title>
+
+    <meta name="description"
+          content="GHOTI MARKET AI Assistant — GHOTI MARKET-এর Product, Seller, Reseller, Affiliate, Order, Delivery, Return ও Policy সম্পর্কে দ্রুত তথ্য জানুন।">
+
+    <meta name="keywords"
+          content="GHOTI MARKET AI, Ghoti Market, GHOTI MARKET Assistant, Ghoti Market Bangladesh, Ghoti Market Seller, Ghoti Market Reseller, Ghoti Market Affiliate, Ghoti Market Product">
+
+    <meta name="author" content="GHOTI MARKET">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://ai.ghotimarket.com/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://ghotimarket.com/logo.png">
+    <link rel="shortcut icon" type="image/png" href="https://ghotimarket.com/logo.png">
+    <link rel="apple-touch-icon" href="https://ghotimarket.com/logo.png">
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#FF6B35">
+    <meta name="application-name" content="GHOTI MARKET AI">
+    <meta name="apple-mobile-web-app-title" content="GHOTI MARKET AI">
+
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GHOTI MARKET">
+    <meta property="og:title" content="GHOTI MARKET AI | AI Assistant">
+    <meta property="og:description"
+          content="GHOTI MARKET-এর Product, Seller, Reseller, Affiliate, Order ও Policy সম্পর্কে AI Assistant-এর মাধ্যমে তথ্য জানুন।">
+    <meta property="og:url" content="https://ai.ghotimarket.com/">
+    <meta property="og:image" content="https://ghotimarket.com/ai.png">
+    <meta property="og:image:secure_url" content="https://ghotimarket.com/ai.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="GHOTI MARKET AI Assistant">
+    <meta property="og:locale" content="bn_BD">
+
+    <!-- X / Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GHOTI MARKET AI | AI Assistant">
+    <meta name="twitter:description"
+          content="GHOTI MARKET-এর Product, Seller, Reseller, Affiliate, Order ও Policy সম্পর্কে তথ্য জানুন।">
+    <meta name="twitter:image" content="https://ghotimarket.com/ai.png">
+    <meta name="twitter:image:alt" content="GHOTI MARKET AI Assistant">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <img
+                    src="https://ghotimarket.com/logo.png"
+                    alt="GHOTI MARKET Logo"
+                    class="logo"
+                    onerror="this.style.display='none'"
+                >
+
+                <div class="brand-info">
+                    <h1>GHOTI MARKET AI</h1>
+                    <span class="status-badge">
+                        <span class="status-dot"></span> Online
+                    </span>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <button id="newChatBtn" class="btn-secondary" title="New Chat">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                    </svg>
+                    <span>New Chat</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+
+            <!-- Empty State / Hero -->
+            <div id="heroState" class="hero-state">
+                <h2>GHOTI MARKET AI</h2>
+
+                <p>
+                    “GHOTI MARKET-এর Product, Seller, Reseller, Affiliate, Order ও Policy সম্পর্কে জানতে প্রশ্ন করুন।”
+                </p>
+
+                <div class="suggestions-grid">
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="GHOTI MARKET-এ কীভাবে Product খুঁজব?"
+                    >
+                        Product খুঁজুন
+                    </button>
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="কীভাবে GHOTI MARKET-এ Seller হতে চাই?"
+                    >
+                        Seller হতে চাই
+                    </button>
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="Reseller সম্পর্কে বিস্তারিত জানতে চাই।"
+                    >
+                        Reseller সম্পর্কে জানতে চাই
+                    </button>
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="Affiliate প্রোগ্রাম কীভাবে করব?"
+                    >
+                        Affiliate কীভাবে করব?
+                    </button>
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="Delivery এবং Shipping policy কী?"
+                    >
+                        Delivery সম্পর্কে জানতে চাই
+                    </button>
+
+                    <button
+                        class="suggestion-card"
+                        data-prompt="Return এবং Refund policy সম্পর্কে বলুন।"
+                    >
+                        Return Policy জানতে চাই
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chatMessages" class="chat-messages hidden"></div>
+
+        </main>
+
+        <!-- Research Indicator -->
+        <div id="researchIndicator" class="research-indicator hidden">
+            <div class="spinner-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <span id="researchText">
+                GHOTI MARKET-এর তথ্য যাচাই করা হচ্ছে…
+            </span>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <footer class="chat-footer">
+            <div class="input-wrapper">
+
+                <textarea
+                    id="userInput"
+                    rows="1"
+                    placeholder="GHOTI MARKET সম্পর্কে কিছু জিজ্ঞেস করুন…"
+                    maxlength="2000"
+                    aria-label="GHOTI MARKET AI-কে প্রশ্ন করুন"
+                ></textarea>
+
+                <button
+                    id="sendBtn"
+                    class="send-btn"
+                    disabled
+                    title="Send message"
+                    aria-label="Send message"
+                >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                    </svg>
+                </button>
+
+            </div>
+
+            <div class="footer-info">
+                GHOTI MARKET AI can make mistakes. Verify critical info at ghotimarket.com
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Offline Banner -->
+    <div id="offlineBanner" class="offline-banner hidden">
+        ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।
+    </div>
+
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
