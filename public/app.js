@@ -1,5 +1,5 @@
 const BACKEND_URL =
-    "https://ghoti-market-ai.nazrulislam887441234.workers.dev/api/chat";
+    "https://ai.ghotimarket.com/api/chat";
 
 let previousInteractionId = null;
 
