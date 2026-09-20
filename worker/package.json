@@ -1,0 +1,15 @@
+{
+  "name": "ghoti-market-ai-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
