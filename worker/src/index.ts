@@ -82,7 +82,7 @@ export default {
       const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
       const interactionOptions: any = {
-        agent: "antigravity-preview-09-2026",
+        model: "gemini-3.5-flash-lite",
         input: message,
         tools: [
           { type: "google_search" },
